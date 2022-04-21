@@ -1,6 +1,7 @@
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.Scanner;
@@ -10,75 +11,116 @@ import java.util.Scanner;
  */
 
 public class Main {
-
-    public static int DECIMALS = 128;
+    public static int MOD = 81;
 
     public static void main(String[] args) throws FileNotFoundException {
 
-        File file = new File("D:\\ULE\\3º\\SI\\examen_v3.txt");
+        //CIFRAMOS EL ALFABETO CON ESTE CÓDIGO
+        int a = 64; int b = 5;
 
+        //CIFRAMOS EL ALFABETO
         String alf = "aábcdeéfghiíjklmnñoópqrstuúvwxyzAÁBCDEÉFGHIÍJKLMNÑOÓPQRSTUÚVWXYZ0123456789 ,.:-()";
+        ArrayList<Alfabeto> alfabeto = new ArrayList<>();
         for(int i=0; i<alf.length(); i++){
-            int cod = (64*i) + 5;
-            cod = cod%81;
-            System.out.println(i + " , "+cod + " - " + alf.charAt(i));
+            int cod = modulo((a*i) + b, MOD);
+            Alfabeto nuevo = new Alfabeto(alf.charAt(i), i, cod);
+            alfabeto.add(nuevo);
         }
-        //System.out.println(alf.charAt(67));
 
-        /** INFO DE LA FUENTE EXTRA */
-        /*for(int i=0; i<lista.size(); i++){
-            System.out.print(lista.get(i).getChar() + " - ");
-            System.out.println(lista.get(i).getL() + " , " + lista.get(i).getH());
-        }*/
+        //DESCIFRAMOS EL MENSAJE
+        String msg = "ÁeóÍ ebá 5b-CeóÍósUÍCs sÍ2UeÍÚLVVpt)utÍoáÍez2ehÍÍíN1mX-ñjA1E-OmimjX-wOyimj3wPFé13iAimÚj-mj31-OXwÚjF-OwjjbmYf2áUspY7ÍíPomY íYy3KYí ÚoPbbmEYÓ YP:3mbYyÁLÁYY4v6z6(znmsnzh(v:6zW6fW6zvoz(vóp-z6(6MpWÉzxpOFpzzÍ.íÍa3ñcahuiÍa.Í3uV Ía,ua úc.uVáúua3ñca5y(Zj9aa)r7NOFyWOwóyOÁNuukYóRYOKyRYKdRkÁy(OOIiPúGTókCF5yaó95FCyCsaTó)aQAQóiZGZ(";
+        String msgDescifrado = descifrar(msg, alfabeto);
 
-        /*for(int i=0; i<lista.size(); i++){
-            System.out.print(i+1 + " - ");
-            System.out.println(lista.get(i).imprimir());
-        }*/
+        System.out.println(msgDescifrado);
     }
 
-    private static void generarLista(File file) throws FileNotFoundException {
-        /*Scanner sc = new Scanner(file);
-        ArrayList<Alfabeto> lista = new ArrayList<Alfabeto>();
-        int total=0;
+    private static String descifrar(String msg, ArrayList<Alfabeto> lista){
+        String out = "";
+        int linea = 1;
 
-        while (true) {
-            String nxt = sc.nextLine();
-            for(int i=0; i<nxt.length(); i++){
-                char c = nxt.charAt(i);
-                if(c==' '){c='⎵';}
-                int x = checkExist(lista, c);
-                if(x==-1){
-                    Alfabeto newletter = new Alfabeto(c);
-                    lista.add(newletter);
-                }else{
-                    lista.get(x).aumentarFrecuencia();
+        for(int i=0; i<msg.length(); i++){
+            if(i>1){
+                if(out.charAt(i-2)==' ' && out.charAt(i-1)==' '){
+                    linea++;
+                    out = out.substring(0,i-1)+"\n"+out.substring(i);   //SUSTITUIMOS EL 2º DE LOS DOS ESPACIOS POR UN SALTO DE LÍNEA
                 }
-                total++;
             }
 
-            if(sc.hasNextLine()){
-                cambioDeLinea(lista);
-                total+=2;
+            //CODIGO DE DESCIFRADO
+            int a; //COMO A ES UNA POTENCIA, SI SE ELEVA A MÁS DEL Nº5 HAY QUE USAR BIGINTEGER
+            if(linea>5){
+                BigInteger num = new BigInteger("64").pow(linea);
+                a = moduloBig(num,MOD);
             }else{
-                break;
+                a = modulo((int) Math.pow(64,linea),MOD);
             }
+            int b = modulo(linea*5, MOD);
+
+            int aINV = inverso(a,MOD);
+            int bINV = modulo(-aINV*b,MOD);
+
+            int cod = descGetCod(msg.charAt(i),lista);
+            int pos = modulo(aINV*cod + bINV, MOD);
+
+            out = out+lista.get(pos).getChar();
         }
 
-        for(int i=0; i<lista.size(); i++){
-            lista.get(i).setProbabilidad(total);
-        }
-
-        return lista;*/
+        return out;
     }
 
-    private static double redondearDecimal(double x, int dec){
-        double resultado = x;
-        double parteEntera = Math.floor(resultado);
-        resultado=(resultado-parteEntera)*Math.pow(10, dec);
-        resultado=Math.round(resultado);
-        resultado=(resultado/Math.pow(10, dec))+parteEntera;
-        return resultado;
+    private static int inverso(int a, int mod){
+        if(mcd(a,mod)!=1){
+            return -1;
+        }
+        ArrayList<Integer> restos = new ArrayList<>();
+        restos.add(mod); restos.add(a);
+        ArrayList<Integer> mi = new ArrayList<>();
+        mi.add(0); mi.add(1);
+
+        int resto = a;
+        int pos = 1;
+
+        while(resto!=0){
+            pos++;
+            int cociente = modulo(restos.get(pos-2) / restos.get(pos-1), mod);
+            resto = modulo(restos.get(pos-2) % restos.get(pos-1), mod);
+            restos.add(resto);
+            mi.add(modulo(mi.get(pos-2) - (cociente*mi.get(pos-1)), mod));
+        }
+
+        return mi.get(pos-1);
+    }
+
+    private static int descGetCod(char c, ArrayList<Alfabeto> list){
+        for(int i=0; i<list.size(); i++){
+            if(c==list.get(i).getChar()){
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    private static int modulo(int x, int mod){
+        if(x<0){
+            x=-1*x;
+            return mod-(x-(mod * (x/mod)));
+        }
+        return x%mod;
+    }
+
+    private static int moduloBig(BigInteger x, int mod){
+        BigInteger rem = x.remainder(new BigInteger(String.valueOf(mod)));
+        return rem.intValue();
+    }
+
+    private static int mcd(int a, int b) {
+        int temp;
+        while (b != 0) {
+            temp = b;
+            b = a % b;
+            a = temp;
+        }
+        return a;
     }
 
 }
