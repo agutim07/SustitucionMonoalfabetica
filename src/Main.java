@@ -36,12 +36,14 @@ public class Main {
 
     private static String descifrar(String msg, ArrayList<Alfabeto> lista){
         String out = "";
+        boolean cambioDeLinea = true;
         int linea = 1;
 
         for(int i=0; i<msg.length(); i++){
             if(i>1){
                 if(out.charAt(i-2)==' ' && out.charAt(i-1)==' '){
                     linea++;
+                    cambioDeLinea=true;
                     out = out.substring(0,i-1)+"\n"+out.substring(i);   //SUSTITUIMOS EL 2º DE LOS DOS ESPACIOS POR UN SALTO DE LÍNEA
                 }
             }
@@ -58,6 +60,10 @@ public class Main {
 
             int aINV = inverso(a,MOD);
             int bINV = modulo(-aINV*b,MOD);
+            if(cambioDeLinea){
+                System.out.println("Linea "+linea+": cifrar("+a+" , "+b+") descrifrar("+aINV+" , "+bINV+")");
+                cambioDeLinea = false;
+            }
 
             int cod = descGetCod(msg.charAt(i),lista);
             int pos = modulo(aINV*cod + bINV, MOD);
